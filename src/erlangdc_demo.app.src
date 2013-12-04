@@ -1,0 +1,16 @@
+%% Feel free to use, reuse and abuse the code in this file.
+
+{application, erlangdc_demo, [
+	{description, "ErlangDC 2013 Nerves Demo."},
+	{vsn, "1"},
+	{modules, []},
+	{registered, [erlangdc_demo_sup]},
+	{applications, [
+		kernel,
+		stdlib,
+		cowboy,
+		jsx
+	]},
+	{mod, {erlangdc_demo_app, []}},
+	{env, []}
+]}.
