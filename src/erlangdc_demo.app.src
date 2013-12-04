@@ -9,7 +9,8 @@
 		kernel,
 		stdlib,
 		cowboy,
-		jsx
+		jsx,
+		erlang_ale
 	]},
 	{mod, {erlangdc_demo_app, []}},
 	{env, []}

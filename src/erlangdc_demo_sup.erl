@@ -10,14 +10,18 @@
 %% supervisor.
 -export([init/1]).
 
+%% Helper macro for declaring children of supervisor
+-define(CHILD(Id, Mod, Type, Args), {Id, {Mod, start_link, Args},
+                                     permanent, 5000, Type, [Mod]}).
+
 %% API.
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% supervisor.
 
 init([]) ->
-	Procs = [],
-	{ok, {{one_for_one, 10, 10}, Procs}}.
+    {ok, { {one_for_one, 5, 10},
+	   [?CHILD(hwinterface, hwinterface, worker, [])]} }.
