@@ -3,3 +3,4 @@ ebin
 _rel
 _images
 *~
+.depsolver_plt

@@ -12,7 +12,10 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, set_led/2, get_pushbutton/0]).
+-export([start_link/0,
+	 set_led/2,
+	 get_pushbutton/0,
+	 register_pushbutton_listener/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -25,6 +28,9 @@
 -define(YELLOW_LED_PIN, 23).
 -define(PUSH_BUTTON_PIN, 46).
 
+-record(state, {
+	  button_listener}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -34,6 +40,10 @@ set_led(Color, Value) ->
 
 get_pushbutton() ->
     gen_server:call(?SERVER, get_pushbutton).
+
+-spec register_pushbutton_listener(pid()) -> ok.
+register_pushbutton_listener(Pid) ->
+    gen_server:cast(?SERVER, {register_pushbutton_listener, Pid}).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -62,10 +72,11 @@ start_link() ->
 %%--------------------------------------------------------------------
 init([]) ->
     {ok, _} = gpio:start_link({?PUSH_BUTTON_PIN, input}),
+    ok = gpio:set_int(?PUSH_BUTTON_PIN, both),
     {ok, _} = gpio:start_link({?RED_LED_PIN, output}),
     {ok, _} = gpio:start_link({?YELLOW_LED_PIN, output}),
     {ok, _} = gpio:start_link({?GREEN_LED_PIN, output}),
-    {ok, undefined}.
+    {ok, #state{}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -97,7 +108,10 @@ handle_call(get_pushbutton, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({set_led, Color, Value}, State) ->
     gpio:write(color_to_pin(Color), Value),
-    {noreply, State}.
+    {noreply, State};
+handle_cast({register_pushbutton_listener, Pid}, State) ->
+    NewState = State#state{button_listener = Pid},
+    {noreply, NewState}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -109,8 +123,19 @@ handle_cast({set_led, Color, Value}, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_info(_Info, State) ->
+handle_info({gpio_interrupt,_,Direction}, State) ->
+    #state{button_listener = Pid} = State,
+    if
+	is_pid(Pid) ->
+	    Pid ! {pushbutton, Direction};
+	Pid =:= undefined ->
+	    ok
+    end,
+    {noreply, State};
+handle_info(Info, State) ->
+    io:format("Got unexpected message: ~p~n", [Info]),
     {noreply, State}.
+
 
 %%--------------------------------------------------------------------
 %% @private

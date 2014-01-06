@@ -27,5 +27,6 @@ start(_Type, _Args) ->
 				[{env, [{dispatch, Dispatch}]}]),
     erlangdc_demo_sup:start_link().
 
+-spec stop(_) -> ok.
 stop(_State) ->
-    ok.
+    cowboy:stop_listener(http).
